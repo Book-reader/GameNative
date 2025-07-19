@@ -42,6 +42,7 @@ public class GlibcProgramLauncherComponent extends GuestProgramLauncherComponent
     private boolean wow64Mode = true;
     private final ContentsManager contentsManager;
     private final ContentProfile wineProfile;
+    private File workingDir;
 
     public GlibcProgramLauncherComponent(ContentsManager contentsManager, ContentProfile wineProfile) {
         this.contentsManager = contentsManager;
@@ -164,6 +165,14 @@ public class GlibcProgramLauncherComponent extends GuestProgramLauncherComponent
         this.box64Preset = box64Preset;
     }
 
+    public File getWorkingDir() {
+        return workingDir;
+    }
+
+    public void setWorkingDir(File workingDir) {
+        this.workingDir = workingDir;
+    }
+
     private int execGuestProgram() {
         Context context = environment.getContext();
         ImageFs imageFs = ImageFs.find(context);
@@ -207,7 +216,7 @@ public class GlibcProgramLauncherComponent extends GuestProgramLauncherComponent
         String command = box64Path + " " + guestExecutable;
         Log.d("GlibcProgramLauncherComponent", "Final command: " + command);
 
-        return ProcessHelper.exec(command, envVars.toStringArray(), rootDir, (status) -> {
+        return ProcessHelper.exec(command, envVars.toStringArray(), workingDir != null ? workingDir : rootDir, (status) -> {
             Log.d("GlibcProgramLauncherComponent", "Process terminated " + pid + " with status " + status);
             synchronized (lock) {
                 pid = -1;
@@ -334,7 +343,7 @@ public class GlibcProgramLauncherComponent extends GuestProgramLauncherComponent
         // Execute the command and capture its output
         try {
             Log.d("GlibcProgramLauncherComponent", "Shell command is " + finalCommand);
-            java.lang.Process process = Runtime.getRuntime().exec(finalCommand, envVars.toStringArray(), imageFs.getRootDir());
+            java.lang.Process process = Runtime.getRuntime().exec(finalCommand, envVars.toStringArray(), workingDir != null ? workingDir : imageFs.getRootDir());
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
             BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
 

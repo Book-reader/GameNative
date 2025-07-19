@@ -34,6 +34,7 @@ public class GuestProgramLauncherComponent extends EnvironmentComponent {
     private Callback<Integer> terminationCallback;
     private static final Object lock = new Object();
     private boolean wow64Mode = true;
+    private File workingDir;
 
     private Runnable preUnpack;
     public void setPreUnpack(Runnable r) { this.preUnpack = r; }
@@ -134,6 +135,14 @@ public class GuestProgramLauncherComponent extends EnvironmentComponent {
         this.box64Preset = box64Preset;
     }
 
+    public File getWorkingDir() {
+        return workingDir;
+    }
+
+    public void setWorkingDir(File workingDir) {
+        this.workingDir = workingDir;
+    }
+
     private int execGuestProgram() {
         Context context = environment.getContext();
 
@@ -145,12 +154,12 @@ public class GuestProgramLauncherComponent extends EnvironmentComponent {
         addBox64EnvVars(envVars, enableBox86_64Logs);
         if (this.envVars != null) envVars.putAll(this.envVars);
 
-        return exec(context, !wow64Mode, bindingPaths, envVars, terminationCallback, "box64 " + guestExecutable);
+        return exec(context, !wow64Mode, bindingPaths, envVars, terminationCallback, "box64 " + guestExecutable, workingDir);
     }
     public static int exec(Context context, String prootCmd) {
-        return exec(context, false, new String[0], null, null, prootCmd);
+        return exec(context, false, new String[0], null, null, prootCmd, null);
     }
-    public static int exec(Context context, boolean proot32, String[] bindingPaths, EnvVars extraVars, Callback<Integer> terminationCallback, String prootCmd) {
+    public static int exec(Context context, boolean proot32, String[] bindingPaths, EnvVars extraVars, Callback<Integer> terminationCallback, String prootCmd, File workingDir) {
         Log.d("GuestProgramLauncherComponent", "Executing guest program");
         // Context context = environment.getContext();
         // ImageFs imageFs = environment.getImageFs();
@@ -242,7 +251,7 @@ public class GuestProgramLauncherComponent extends EnvironmentComponent {
         if (proot32) envVars.put("PROOT_LOADER_32", nativeLibraryDir + "/libproot-loader32.so");
 
         // ProcessHelper.exec(nativeLibraryDir+"/libproot.so ulimit -a", envVars.toStringArray(), rootDir);
-        return ProcessHelper.exec(command, envVars.toStringArray(), rootDir, (status) -> {
+        return ProcessHelper.exec(command, envVars.toStringArray(), workingDir != null ? workingDir : rootDir, (status) -> {
             Log.d("GuestProgramLauncherComponent", "Process terminated " + pid + " with status " + status);
             synchronized (lock) {
                 pid = -1;

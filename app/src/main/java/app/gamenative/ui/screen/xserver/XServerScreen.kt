@@ -862,7 +862,7 @@ private fun setupXEnvironment(
         val wow64Mode = container.isWoW64Mode
         //            String guestExecutable = wineInfo.getExecutable(this, wow64Mode)+" explorer /desktop=shell,"+xServer.screenInfo+" "+getWineStartCommand();
         val guestExecutable = "wine explorer /desktop=shell," + xServer.screenInfo + " " +
-            getWineStartCommand(appId, container, bootToContainer, appLaunchInfo, envVars) +
+            getWineStartCommand(appId, container, bootToContainer, appLaunchInfo, envVars, guestProgramLauncherComponent) +
             (if (container.execArgs.isNotEmpty()) " " + container.execArgs else "")
         guestProgramLauncherComponent.isWoW64Mode = wow64Mode
         guestProgramLauncherComponent.guestExecutable = guestExecutable
@@ -997,6 +997,7 @@ private fun getWineStartCommand(
     bootToContainer: Boolean,
     appLaunchInfo: LaunchInfo?,
     envVars: EnvVars,
+    guestProgramLauncherComponent: GuestProgramLauncherComponent
 ): String {
     val tempDir = File(container.getRootDir(), ".wine/drive_c/windows/temp")
     FileUtils.clear(tempDir)
@@ -1014,6 +1015,9 @@ private fun getWineStartCommand(
             container.executablePath = executablePath
             container.saveData()
         }
+        val executableDir = appDirPath + "/" + executablePath.substringBeforeLast("/", "")
+        guestProgramLauncherComponent.workingDir = File(executableDir);
+        Timber.i("Working directory is ${executableDir}")
 
         Timber.i("Final exe path is " + executablePath)
         val drives = container.drives
